@@ -115,24 +115,12 @@ app-native-permissions/
 
 ## Capturas de pantalla
 
-Guardá las imágenes en `docs/capturas/` con estos nombres. Cuando los archivos estén, se pueden mostrar así:
+Las imágenes van en `docs/capturas/`. Mientras no estén los archivos, esta lista indica qué captura corresponde a cada nombre:
 
-### Permiso de cámara
-
-![Pantalla para permitir la cámara](docs/capturas/permiso.png)
-
-### Permiso rechazado
-
-![Mensaje cuando el permiso está rechazado](docs/capturas/permiso-rechazado.png)
-
-### Vista de la cámara
-
-![Visor con el botón para fotografiar](docs/capturas/camara.png)
-
-### Vista previa
-
-![Fotografía capturada y botón para sacar otra](docs/capturas/vista-previa.png)
-
-### Galería
-
-![Fotos guardadas](docs/capturas/galeria.png)
+| Archivo | Qué mostrar |
+| --- | --- |
+| `docs/capturas/permiso.png` | Pantalla para permitir la cámara |
+| `docs/capturas/permiso-rechazado.png` | Mensaje cuando el permiso está rechazado |
+| `docs/capturas/camara.png` | Visor con el botón para fotografiar |
+| `docs/capturas/vista-previa.png` | Fotografía recién sacada |
+| `docs/capturas/galeria.png` | Fotos guardadas |
