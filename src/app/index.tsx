@@ -1,98 +1,125 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useState } from "react";
+import { Alert } from "react-native";
+import { CameraCapture } from "@/components/CameraCapture";
+import { PermissionGate } from "@/components/PermissionGate";
+import { PhotoGallery } from "@/components/PhotoGallery";
+import { PhotoPreview } from "@/components/PhotoPreview";
+import { usePhotoLibrary } from "@/hooks/usePhotoLibrary";
+import type { CapturedPhoto } from "@/types/photo";
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+type Screen =
+  | { type: "camera" }
+  | { type: "preview"; photoId: string }
+  | { type: "gallery" }
+  | { type: "photo"; photoId: string };
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
+export default function Index() {
+  const library = usePhotoLibrary();
+  const [screen, setScreen] = useState<Screen>({ type: "camera" });
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const openGallery = () => {
+    setDeleteError(null);
+    setScreen({ type: "gallery" });
+  };
+
+  const handleCaptured = async (photo: CapturedPhoto) => {
+    const saved = await library.save(photo);
+    setDeleteError(null);
+    setScreen({ type: "preview", photoId: saved.id });
+  };
+
+  const confirmDelete = (photoId: string, next: Screen) => {
+    Alert.alert("Eliminar fotografía", "Se borra de la aplicación. Esta acción no se puede deshacer.", [
+      { text: "Cancelar", style: "cancel" },
+      {
+        text: "Eliminar",
+        style: "destructive",
+        onPress: () => {
+          void library
+            .remove(photoId)
+            .then(() => {
+              setDeleteError(null);
+              setScreen(next);
+            })
+            .catch(() => {
+              setDeleteError("No se pudo eliminar la fotografía.");
+            });
+        },
+      },
+    ]);
+  };
+
+  const selected =
+    screen.type === "preview" || screen.type === "photo"
+      ? library.photos.find((photo) => photo.id === screen.photoId)
+      : null;
+
+  if (screen.type === "gallery" || (screen.type === "photo" && !selected)) {
     return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
+      <PhotoGallery
+        photos={library.photos}
+        isLoading={!library.isReady}
+        error={library.error}
+        onOpenCamera={() => setScreen({ type: "camera" })}
+        onOpenPhoto={(photoId) => {
+          setDeleteError(null);
+          setScreen({ type: "photo", photoId });
+        }}
+      />
     );
   }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
+
+  if (selected && screen.type === "preview") {
+    return (
+      <PhotoPreview
+        photo={selected}
+        eyebrow="Fotografía"
+        title="Vista previa"
+        body="Quedó guardada en la app. Podés verla junto con las otras o borrarla."
+        primaryLabel="Sacar otra fotografía"
+        onPrimary={() => setScreen({ type: "camera" })}
+        secondaryLabel="Ver fotos"
+        onSecondary={openGallery}
+        onDelete={() => confirmDelete(selected.id, { type: "camera" })}
+        deleteError={deleteError}
+      />
+    );
+  }
+
+  if (selected && screen.type === "photo") {
+    return (
+      <PhotoPreview
+        photo={selected}
+        eyebrow="Galería"
+        title="Fotografía"
+        body="Está guardada en la aplicación hasta que la elimines."
+        primaryLabel="Volver a las fotos"
+        onPrimary={openGallery}
+        secondaryLabel="Sacar otra"
+        onSecondary={() => setScreen({ type: "camera" })}
+        onDelete={() => confirmDelete(selected.id, { type: "gallery" })}
+        deleteError={deleteError}
+      />
+    );
+  }
+
+  const galleryAction =
+    library.photos.length > 0
+      ? {
+          label: `Ver fotos (${library.photos.length})`,
+          onPress: openGallery,
+          variant: "secondary" as const,
+        }
+      : undefined;
+
   return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
+    <PermissionGate extraAction={galleryAction}>
+      <CameraCapture
+        photoCount={library.photos.length}
+        onOpenGallery={openGallery}
+        onCaptured={handleCaptured}
+      />
+    </PermissionGate>
   );
 }
-
-export default function HomeScreen() {
-  return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
-
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
-
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
-
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
-  },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
-  },
-  title: {
-    textAlign: 'center',
-  },
-  code: {
-    textTransform: 'uppercase',
-  },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
-  },
-});

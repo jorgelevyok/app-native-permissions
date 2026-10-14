@@ -1,12 +1,12 @@
 {
   "expo": {
-    "name": "app-native-permissions",
+    "name": "Captura",
     "slug": "app-native-permissions",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "appnativepermissions",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
     "ios": {
       "icon": "./assets/expo.icon"
     },
@@ -31,6 +31,15 @@
           "backgroundColor": "#208AEF",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Captura necesita la cámara para tomar fotografías y mostrarlas en pantalla.",
+          "microphonePermission": "Captura no graba audio.",
+          "recordAudioAndroid": false,
+          "barcodeScannerEnabled": false
         }
       ]
     ],

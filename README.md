@@ -1,56 +1,138 @@
-# Welcome to your Expo app 👋
+# Captura
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Aplicación de fotografías para la actividad 6 de la UTN. Abre la cámara del dispositivo, pide el permiso correspondiente y muestra la foto que se acaba de sacar.
 
-## Get started
+El proyecto vive en la carpeta `app-native-permissions`. En el teléfono, la app se llama **Captura**.
 
-1. Install dependencies
+## Objetivo de la actividad
 
-   ```bash
-   npm install
-   ```
+La consigna de **Manipulación nativa** pide usar una API del dispositivo desde React Native. En esta entrega se usa la cámara: pedir el permiso, mostrar el visor, sacar una fotografía y volver a sacar otra. Si el permiso se rechaza, la app explica qué pasa y ofrece abrir la configuración del sistema.
 
-2. Start the app
+## Tecnologías
 
-   ```bash
-   npx expo start
-   ```
+- React Native
+- Expo SDK 57
+- Expo Router
+- TypeScript
+- `expo-camera`
+- `expo-file-system`
+- `expo-image`
 
-In the output, you'll find options to open the app in a
+## Funcionalidades
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- Consulta el permiso de cámara al abrir la app y muestra un estado de carga mientras lo hace.
+- Pide el permiso con el diálogo del sistema.
+- Muestra la cámara trasera o frontal y permite cambiar el flash (apagado, activo o automático).
+- Saca una fotografía recién cuando la cámara está lista.
+- Muestra la vista previa con el tamaño de la imagen.
+- Guarda cada fotografía en la app para verla después.
+- Muestra las fotos guardadas en una galería.
+- Permite eliminar una fotografía, con confirmación.
+- Permite sacar otra fotografía.
+- Si el permiso se rechaza, explica el motivo y abre la configuración del dispositivo. Al volver, vuelve a leer el permiso.
+- Si la cámara no arranca o la captura falla, muestra el error y deja reintentar.
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## Requisitos previos
 
-## Get a fresh project
+- Node.js instalado.
+- La app **Expo Go** en un teléfono Android, actualizada para el SDK 57.
+- El teléfono y la computadora en la misma red, o un cable USB si se usa `npx expo start --android`.
 
-When you're ready, run:
+La cámara hay que probarla en un dispositivo físico. Un emulador sin cámara web no puede sacar la foto.
+
+## Instalación y ejecución
+
+Desde la carpeta `app-native-permissions`:
 
 ```bash
-npm run reset-project
+npm install
+npx expo start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+En la terminal de Expo, presioná `a` para abrir Android o escaneá el QR con Expo Go.
 
-### Other setup steps
+`expo-camera` viene incluido en Expo Go. No hace falta un development build para esta actividad.
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+## Permisos de cámara
 
-## Learn more
+La app no abre la cámara por su cuenta. Primero lee el estado con `useCameraPermissions`, de `expo-camera`.
 
-To learn more about developing your project with Expo, look at the following resources:
+1. Si todavía no se pidió, aparece la pantalla **Permitir cámara**. Ese botón llama a `requestPermission()` y el sistema muestra el diálogo.
+2. Si la persona acepta, se monta `CameraView` y se puede fotografiar.
+3. Si rechaza y el sistema todavía deja volver a preguntar (`canAskAgain`), se puede solicitar de nuevo o abrir la configuración.
+4. Si rechaza y el sistema no va a volver a preguntar, el único camino es la configuración. El botón **Abrir configuración** usa `Linking.openSettings()`.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+En Android con Expo Go el permiso no es de una app instalada aparte: es el permiso de **Expo Go**. El camino es Ajustes, Aplicaciones, Expo Go, Permisos, Cámara, Permitir.
 
-## Join the community
+Cuando la app vuelve a primer plano, lee el permiso otra vez. Si ya está concedido, el visor aparece sin reiniciar Expo.
 
-Join our community of developers creating universal apps.
+En `app.json`, el plugin `expo-camera` declara el permiso `CAMERA` para un build nativo y deja `recordAudioAndroid` en `false`, porque esta app no graba audio. En Expo Go ese manifiesto ya está resuelto por Expo Go; lo que decide la pantalla es el permiso en tiempo de ejecución.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+La fotografía que devuelve `takePictureAsync` queda primero en la caché. La app la copia al directorio de documentos, en `captura-photos`, y anota el ancho, el alto y la fecha en un manifiesto. Desde **Fotos** se pueden ver y, con **Eliminar**, se borran el archivo y la entrada. Siguen disponibles al cerrar y volver a abrir la app.
+
+## Estructura de carpetas
+
+```text
+app-native-permissions/
+├── assets/images/          ícono, splash y favicon
+├── docs/capturas/          espacio para las capturas de la entrega
+├── src/
+│   ├── app/
+│   │   ├── _layout.tsx     navegación y barra de estado
+│   │   └── index.tsx       pantalla principal
+│   ├── components/
+│   │   ├── AccessMessage.tsx
+│   │   ├── AppButton.tsx
+│   │   ├── CameraCapture.tsx
+│   │   ├── PermissionGate.tsx
+│   │   ├── PhotoGallery.tsx
+│   │   └── PhotoPreview.tsx
+│   ├── constants/theme.ts
+│   ├── hooks/
+│   │   ├── useCameraAccess.ts
+│   │   └── usePhotoLibrary.ts
+│   ├── lib/photoStorage.ts
+│   └── types/photo.ts
+├── app.json
+├── package.json
+└── tsconfig.json
+```
+
+## Cómo probarla
+
+1. Instalá las dependencias y ejecutá `npx expo start`.
+2. Abrí el proyecto en Expo Go, en un Android con cámara.
+3. En la primera pantalla, tocá **Permitir cámara** y aceptá el diálogo.
+4. Esperá a que desaparezca **Iniciando cámara…**.
+5. Tocá el botón circular y comprobá que aparece la vista previa con las medidas de la foto.
+6. Tocá **Ver fotos** y confirmá que la fotografía está en la galería. También se abre con el botón **Fotos** del visor.
+7. Abrí una foto y tocá **Eliminar**. Después de confirmar, no tiene que seguir en la lista.
+8. Tocá **Sacar otra fotografía** y repetí la captura.
+9. Cerrá y volvé a abrir la app: las fotos que no borraste siguen en **Fotos**.
+10. Probá el cambio entre cámara trasera y frontal, y los modos de flash.
+11. Para el rechazo: cerrá la app, entrá a los ajustes de Expo Go, desactivá la cámara y volvé a abrirla. Tiene que verse el mensaje y el botón **Abrir configuración**. Si ya había fotos, también aparece **Ver fotos**.
+12. Habilitá la cámara desde ese botón, volvé a Expo Go y confirmá que el visor aparece.
+
+## Capturas de pantalla
+
+Guardá las imágenes en `docs/capturas/` con estos nombres. Cuando los archivos estén, se pueden mostrar así:
+
+### Permiso de cámara
+
+![Pantalla para permitir la cámara](docs/capturas/permiso.png)
+
+### Permiso rechazado
+
+![Mensaje cuando el permiso está rechazado](docs/capturas/permiso-rechazado.png)
+
+### Vista de la cámara
+
+![Visor con el botón para fotografiar](docs/capturas/camara.png)
+
+### Vista previa
+
+![Fotografía capturada y botón para sacar otra](docs/capturas/vista-previa.png)
+
+### Galería
+
+![Fotos guardadas](docs/capturas/galeria.png)
